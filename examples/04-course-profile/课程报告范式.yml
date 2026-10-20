@@ -1,0 +1,21 @@
+kind: course-report-profile
+
+# 一门课共用一份：该课程下各实验的 report config 自动继承这里的样式，
+# 单次 config 只写本次实验特有的内容。
+styles:
+  section:
+    size: 28
+    bold: true
+  subheading:
+    size: 24
+    bold: true
+  body:
+    size: 24
+    font: 宋体
+  caption:
+    size: 21
+    align: center
+
+spacing:
+  text_line: 360
+  caption_line: 240

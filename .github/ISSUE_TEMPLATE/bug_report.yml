@@ -1,0 +1,75 @@
+name: Bug report
+description: Something builds wrong, crashes, or loses content.
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A minimal reproduction (config + generated fixture template) is worth more than the full report.
+        Please redact student names, paths and any personal data.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the command, the exit code, and the actual output.
+      placeholder: |
+        $ docx-report build docs/exp1/report.yml
+        error [E_TEMPLATE_LAYOUT]: template document does not contain expected tables
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config (redacted)
+      description: The report or enrich config, at least the failing block/action and its paths.
+      render: yaml
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `docx-report doctor <config>`
+      description: This usually explains the failure on its own.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: docxreport version
+      description: Output of `docx-report --version`
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: OS / Python / Word
+      placeholder: Windows 11, Python 3.12.4, Word 2021
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - build
+        - revise (image preservation)
+        - enrich (anchors / appendices)
+        - validate / verify
+        - template layout
+        - notebook / experiment gate
+        - PDF export
+        - docs
+        - other
+    validations:
+      required: true

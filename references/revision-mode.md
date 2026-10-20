@@ -11,9 +11,8 @@
 
 ## 当前适用来源
 
-- `revise_existing_reports.py`
-- `docx_report/revision.py`
-- `docx_report/ooxml_backend.py`
+- `src/docx_report/revision.py`
+- `src/docx_report/ooxml_backend.py`（`extract_image_paragraphs` / `sanitize_image_paragraph`）
 
 ## 适用场景
 

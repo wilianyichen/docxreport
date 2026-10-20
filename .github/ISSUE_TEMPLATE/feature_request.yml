@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose a new block, action, command or behaviour.
+title: "[feat] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you unable to do today? Describe the report and the template, not the implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: If it changes the config format, sketch the YAML.
+      render: yaml
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, and why they were not enough.
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Compatibility impact
+      options:
+        - additive (new optional field / command)
+        - behavioural change (existing output changes)
+        - breaking change (existing configs stop working)
+        - internal only (no config change)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: willingness
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to open a PR for this
+        - label: I can provide a minimal reproduction / sample template (redacted)

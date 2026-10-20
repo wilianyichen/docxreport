@@ -1,0 +1,14 @@
+name: example-course-exp1
+template: ../../template.docx
+output: out/report.docx
+cover_title: 实验一
+experiment_name: 示例实验：课程范式继承
+
+# 样式全部继承 ../../课程报告范式.yml，这里不重复声明
+blocks:
+  - kind: section
+    text: 一、实验目的
+  - kind: body
+    text: 课程模板层次退化时，节标题与正文同格式，由范式统一指定。
+  - kind: caption
+    text: 图 1 图注使用独立的 caption 角色（10.5pt 居中）

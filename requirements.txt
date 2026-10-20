@@ -1,0 +1,5 @@
+# Minimal runtime dependencies for the skill/CLI (mirrors pyproject dependencies).
+# For development use:  pip install -e ".[dev]"
+python-docx>=1.0
+PyYAML>=6.0
+Pillow>=9.0

@@ -1,0 +1,21 @@
+name: example-enrich
+output: out/final.docx
+
+actions:
+  - action: add_page_break
+  - action: append_heading
+    text: 附录 A 运行实录
+    level: 1
+  - action: append_paragraph
+    text: 以下为实际运行时捕获的终端输出。
+  - action: append_code_from_file
+    file: ../out/run.log
+    head_lines: 5
+  - action: append_image
+    image: ../out/fig2.png
+    width_inches: 3.0
+  - action: insert_image_after_anchor
+    anchor: 附录 A 运行实录
+    image: ../out/fig1.png
+    caption: 图 A-1 锚点插图
+    width_inches: 2.5

@@ -19,13 +19,14 @@
 可以直接运行：
 
 ```bash
-python C:/Users/wilia/.workbuddy/skills/docx-report-skill/scripts/skill_entry.py inspect-template /path/to/template.docx
+docx-report inspect-template /path/to/template.docx
 ```
 
 或：
 
 ```bash
-python C:/Users/wilia/.workbuddy/skills/docx-report-skill/scripts/inspect_docx_template.py /path/to/template.docx
+# 旧脚本仍可用（已弃用，等价于上面的命令）
+python scripts/inspect_docx_template.py /path/to/template.docx
 ```
 
 ## 什么时候需要更新 assumptions

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/REPLACE-ME/docxreport/schema/report.schema.json",
+  "title": "docxreport report config",
+  "description": "Config consumed by `build`, `revise`, `preview`.",
+  "type": "object",
+  "required": ["output", "blocks"],
+  "properties": {
+    "name": { "type": "string" },
+    "backend": { "type": "string", "enum": ["ooxml-template"], "default": "ooxml-template" },
+    "template": { "type": "string", "description": "Required for build. Relative paths resolve against this config file's directory." },
+    "output": { "type": "string", "description": "Relative paths resolve against this config file's directory." },
+    "cover_title": { "type": "string" },
+    "experiment_name": { "type": "string" },
+    "expected_images": { "type": ["integer", "null"], "minimum": 0 },
+    "extends": { "type": "string", "description": "Parent report config merged underneath this one." },
+    "course_profile": { "type": "string", "description": "Explicit path to a course-report-profile file." },
+    "experiment_requirements": { "type": "string", "description": "requirements.yml enabling the experiment-completeness gate before build." },
+    "assumptions": {
+      "type": "object",
+      "properties": {
+        "required_table_count": { "type": "integer", "minimum": 1 },
+        "cover_table_index": { "type": "integer", "minimum": 0 },
+        "report_table_index": { "type": "integer", "minimum": 0 },
+        "experiment_name_row": { "type": "integer", "minimum": 0 },
+        "experiment_name_col": { "type": "integer", "minimum": 0 },
+        "content_row": { "type": "integer", "minimum": 0 },
+        "content_col": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "styles": {
+      "type": "object",
+      "description": "Per-role style overrides (cover_title/experiment_name/section/subheading/body/caption/placeholder).",
+      "additionalProperties": { "$ref": "#/$defs/paragraphStyle" }
+    },
+    "style_resolution": { "type": "object" },
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/block" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "paragraphStyle": {
+      "type": "object",
+      "properties": {
+        "font": { "type": "string", "description": "Shorthand: sets ascii/hAnsi/eastAsia at once." },
+        "ascii_font": { "type": "string" },
+        "hansi_font": { "type": "string" },
+        "east_asia_font": { "type": "string" },
+        "cs_font": { "type": "string" },
+        "size": { "type": "integer", "description": "Half-points, e.g. 24 = 12pt." },
+        "bold": { "type": "boolean" },
+        "color": { "type": ["string", "null"], "description": "Hex without '#', e.g. 0000FF." },
+        "align": { "type": ["string", "null"], "enum": ["left", "center", "right", "justify", null] },
+        "spacing_after": { "type": "integer" },
+        "spacing_line": { "type": "integer", "description": "Twips, 360 = 1.5 line spacing." },
+        "spacing_line_rule": { "type": "string", "enum": ["auto", "exact", "atLeast"] }
+      },
+      "additionalProperties": false
+    },
+    "block": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["section", "subheading", "body", "caption", "figure", "figure_group", "screenshot", "metrics", "placeholder", "image"]
+        },
+        "text": { "type": "string" },
+        "image": { "type": "string" },
+        "width_inches": { "type": "number", "exclusiveMinimum": 0 },
+        "label": { "type": "string" },
+        "hint": { "type": "string" },
+        "images": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "ratio": { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "source": { "type": "string", "description": "metrics: JSON file to read numbers from." },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key"],
+            "properties": {
+              "key": { "type": "string", "description": "Dotted path, e.g. test.accuracy" },
+              "label": { "type": "string" },
+              "fmt": { "type": "string", "description": "Python format spec, e.g. .4f" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["image"],
+            "properties": {
+              "image": { "type": "string" },
+              "text": { "type": "string" },
+              "width_inches": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "figure" } }, "required": ["kind"] },
+          "then": { "required": ["image"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "figure_group" } }, "required": ["kind"] },
+          "then": { "required": ["items"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "metrics" } }, "required": ["kind"] },
+          "then": { "required": ["source"] }
+        }
+      ]
+    }
+  }
+}

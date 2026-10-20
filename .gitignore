@@ -15,6 +15,7 @@ htmlcov/
 tests/fixtures/generated/
 tests/tmp/
 _tmp/
+examples/out/
 *.docx
 *.doc
 *.pdf

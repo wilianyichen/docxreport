@@ -1,35 +1,19 @@
 #!/usr/bin/env python3
-"""Inspect the fixed-table assumptions of a DOCX template."""
+"""Deprecated: use ``docx-report inspect-template <template.docx>`` instead."""
 
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
-_cwd = Path.cwd()
-for _parent in [_cwd, *_cwd.parents]:
-    if (_parent / 'docx_report' / '__init__.py').exists():
-        PROJECT_ROOT = _parent
-        break
-else:
-    PROJECT_ROOT = _cwd
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+_SRC = Path(__file__).resolve().parents[1] / "src"
+if (_SRC / "docx_report" / "__init__.py").exists() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
-from docx_report.models import TemplateLayoutAssumptions
-from docx_report.validators import validate_template_layout
+from docx_report.cli import main  # noqa: E402
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Inspect DOCX template layout assumptions")
-    parser.add_argument("template", type=Path)
-    args = parser.parse_args()
-
-    result = validate_template_layout(args.template, TemplateLayoutAssumptions())
-    for line in result.summary_lines():
-        print(line)
-
+DEPRECATION = "warning: scripts/inspect_docx_template.py is deprecated; use `docx-report inspect-template`"
 
 if __name__ == "__main__":
-    main()
+    print(DEPRECATION, file=sys.stderr)
+    sys.exit(main(["inspect-template", *sys.argv[1:]]))

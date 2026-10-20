@@ -1,0 +1,18 @@
+name: example-revise
+template: ../template.docx
+output: out/revised.docx
+cover_title: 实验一
+experiment_name: 示例实验：保图修订
+# Declares how many images must survive the revision. 0 keeps this example
+# dependency-free; set it to the real count in your project.
+expected_images: 0
+
+blocks:
+  - kind: section
+    text: 一、实验目的
+  - kind: body
+    text: 修订后的正文。若原报告里已经贴了截图，revise 会把它们按原顺序放回。
+  - kind: section
+    text: 二、实验结论
+  - kind: body
+    text: 修订不会重排图片段落，也不会改动封面分页符。

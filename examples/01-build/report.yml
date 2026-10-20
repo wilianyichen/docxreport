@@ -1,0 +1,27 @@
+name: example-build
+template: ../template.docx
+output: out/report.docx
+cover_title: 实验一
+experiment_name: 示例实验：模板填充
+
+blocks:
+  - kind: section
+    text: 一、实验目的
+  - kind: body
+    text: 演示最小可用配置：章节、正文、结果图、指标搬运与运行截图占位。
+  - kind: section
+    text: 二、实验结果
+  - kind: figure
+    image: ../out/fig1.png
+    width_inches: 3.0
+    text: 图 1 自动插入的结果图
+  - kind: metrics
+    source: ../out/metrics.json
+    text: 关键指标：
+    fields:
+      - { key: test.accuracy, label: 测试集 Accuracy, fmt: ".4f" }
+      - { key: test.samples, label: 样本数 }
+  - kind: screenshot
+    label: 运行截图
+    hint: cell 3
+    text: 图 2 Jupyter 单元运行结果
