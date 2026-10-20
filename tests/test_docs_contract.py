@@ -6,8 +6,12 @@ import re
 from pathlib import Path
 
 import pytest
-import tomllib
 import yaml
+
+try:  # Python 3.11+
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on the 3.10 CI job
+    import tomli as tomllib
 
 from docx_report import __version__
 from docx_report.cli import build_parser

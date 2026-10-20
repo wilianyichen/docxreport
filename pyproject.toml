@@ -48,6 +48,8 @@ dev = [
     "jsonschema>=4.0",
     "ruff>=0.5",
     "pre-commit>=3.0",
+    # tomllib only joined the stdlib in 3.11; the contract tests read pyproject.toml
+    "tomli>=2.0; python_version < '3.11'",
 ]
 
 [project.scripts]

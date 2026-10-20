@@ -6,7 +6,11 @@ import json
 from pathlib import Path
 
 import pytest
-import tomllib
+
+try:  # Python 3.11+
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on the 3.10 CI job
+    import tomli as tomllib
 
 from docx_report import __version__
 from docx_report.cli import build_parser, main
@@ -37,7 +41,14 @@ def test_all_documented_commands_exist():
     assert set(action.choices) == EXPECTED_COMMANDS
 
 
-def test_every_command_has_a_help_string(capsys):
+def test_every_command_has_a_help_string(monkeypatch, capsys):
+    # argparse wraps a long description onto the following line whenever the
+    # command column plus help exceeds the terminal width, and the wrapping
+    # algorithm changed between Python versions: `inspect-template` stayed on one
+    # line on 3.12/3.13 and moved to a description-only line on 3.11, failing this
+    # test on half the CI matrix. Widening COLUMNS keeps every command on one line
+    # so the assertion below tests the contract instead of argparse's layout.
+    monkeypatch.setenv("COLUMNS", "200")
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--help"])
     out = capsys.readouterr().out
@@ -45,7 +56,7 @@ def test_every_command_has_a_help_string(capsys):
         line = next((ln for ln in out.splitlines() if ln.strip().startswith(name)), None)
         assert line is not None, f"{name} missing from --help"
         # a command is documented only if its help text has real words after the name
-        assert len(line.strip().split()) > 1, f"{name} has no help text"
+        assert len(line.strip().split()) > 1, f"{name} has no help text: {line!r}"
 
 
 def test_version_flag_matches_package(capsys):
