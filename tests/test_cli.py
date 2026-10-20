@@ -41,22 +41,41 @@ def test_all_documented_commands_exist():
     assert set(action.choices) == EXPECTED_COMMANDS
 
 
-def test_every_command_has_a_help_string(monkeypatch, capsys):
-    # argparse wraps a long description onto the following line whenever the
-    # command column plus help exceeds the terminal width, and the wrapping
-    # algorithm changed between Python versions: `inspect-template` stayed on one
-    # line on 3.12/3.13 and moved to a description-only line on 3.11, failing this
-    # test on half the CI matrix. Widening COLUMNS keeps every command on one line
-    # so the assertion below tests the contract instead of argparse's layout.
-    monkeypatch.setenv("COLUMNS", "200")
+def test_every_command_has_a_help_string(capsys):
+    """Every subcommand must carry a description in the top-level --help table.
+
+    Do not assert "the name and its description share a line". argparse moves the
+    description onto its own line whenever the command name does not fit the
+    *name column*, whose width is capped by max_help_position=24 and is
+    independent of the terminal width. Which commands wrap changed between
+    Python releases (3.10 wrapped `inspect-template`, 3.11/3.12/3.13 wrapped
+    `experiment-doctor`), so a per-line assertion failed on part of the matrix
+    while the product was fine. Scanning the block between one command name and
+    the next is layout-independent.
+    """
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--help"])
-    out = capsys.readouterr().out
-    for name in EXPECTED_COMMANDS:
-        line = next((ln for ln in out.splitlines() if ln.strip().startswith(name)), None)
-        assert line is not None, f"{name} missing from --help"
-        # a command is documented only if its help text has real words after the name
-        assert len(line.strip().split()) > 1, f"{name} has no help text: {line!r}"
+    lines = capsys.readouterr().out.splitlines()
+
+    first_line: dict[str, int] = {}
+    order: list[str] = []
+    for index, line in enumerate(lines):
+        tokens = line.strip().split(maxsplit=1)
+        name = tokens[0] if tokens else ""
+        if name in EXPECTED_COMMANDS and name not in first_line:
+            first_line[name] = index
+            order.append(name)
+
+    missing = sorted(EXPECTED_COMMANDS - set(order))
+    assert not missing, f"missing from --help: {missing}"
+
+    for position, name in enumerate(order):
+        start = first_line[name]
+        end = first_line[order[position + 1]] if position + 1 < len(order) else len(lines)
+        block = " ".join(lines[start:end]).strip()
+        description = block[len(name) :].strip()
+        words = description.split()
+        assert len(words) >= 3, f"{name} has no help text; block was {block!r}"
 
 
 def test_version_flag_matches_package(capsys):
