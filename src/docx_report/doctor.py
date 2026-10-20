@@ -7,7 +7,7 @@ from pathlib import Path
 
 from docx import Document
 
-from .config_loader import _load_mapping, load_enrichment_config, load_report_config
+from .config_loader import _load_mapping, load_enrichment_config, load_report_config, resolve_input_path
 from .experiment_readiness import check_experiment_readiness
 from .models import DoctorCheck, DoctorResult, EnrichmentConfig, ReportConfig
 from .ooxml_backend import (
@@ -88,16 +88,14 @@ def _doctor_report_config(config: ReportConfig, input_docx: Path | None) -> Doct
 
     figure_blocks = [b for b in config.blocks if b.kind == "figure"]
     if figure_blocks:
-        base = config.source.parent if config.source is not None else Path.cwd()
+        paths_base = (config.extras or {}).get("paths_base")
         missing = []
         for b in figure_blocks:
             raw = str(b.meta.get("image") or "")
             if not raw:
                 missing.append("<empty image path>")
                 continue
-            cand = Path(raw)
-            if not cand.is_absolute():
-                cand = base / cand
+            cand = resolve_input_path(config.source, raw, paths_base=paths_base)
             if not cand.exists():
                 missing.append(raw)
         if missing:
@@ -270,6 +268,7 @@ def _doctor_enrichment_config(config: EnrichmentConfig, input_docx: Path | None)
         )
 
     anchor_count = 0
+    missing_parents: set[str] = set()
     for index, action in enumerate(config.actions, start=1):
         label = f"action[{index}]"
         if action.action == "insert_image_after_anchor":
@@ -283,14 +282,18 @@ def _doctor_enrichment_config(config: EnrichmentConfig, input_docx: Path | None)
                 ok = False
                 checks.append(DoctorCheck("error", label, "insert_image_after_anchor is missing image"))
             else:
-                ok = ok and _check_resource_exists(
+                # Call first, combine after: `ok = ok and check(...)` would short-circuit
+                # and silently skip every later action once one action has failed.
+                if not _check_resource_exists(
                     checks,
                     config,
                     action.image,
                     label,
                     required=bool(action.extras.get("required", True)),
                     purpose="anchor image",
-                )
+                    missing_parents=missing_parents,
+                ):
+                    ok = False
             continue
 
         if action.action == "append_image":
@@ -298,14 +301,16 @@ def _doctor_enrichment_config(config: EnrichmentConfig, input_docx: Path | None)
                 ok = False
                 checks.append(DoctorCheck("error", label, "append_image is missing image"))
             else:
-                ok = ok and _check_resource_exists(
+                if not _check_resource_exists(
                     checks,
                     config,
                     action.image,
                     label,
                     required=bool(action.extras.get("required", True)),
                     purpose="append image",
-                )
+                    missing_parents=missing_parents,
+                ):
+                    ok = False
             continue
 
         if action.action == "append_code_from_file":
@@ -314,9 +319,16 @@ def _doctor_enrichment_config(config: EnrichmentConfig, input_docx: Path | None)
                 ok = False
                 checks.append(DoctorCheck("error", label, "append_code_from_file is missing file"))
             else:
-                ok = ok and _check_resource_exists(
-                    checks, config, Path(str(raw_file)), label, required=True, purpose="artifact file"
-                )
+                if not _check_resource_exists(
+                    checks,
+                    config,
+                    Path(str(raw_file)),
+                    label,
+                    required=True,
+                    purpose="artifact file",
+                    missing_parents=missing_parents,
+                ):
+                    ok = False
             continue
 
     if anchor_count == 0:
@@ -396,16 +408,53 @@ def _check_resource_exists(
     *,
     required: bool,
     purpose: str,
+    missing_parents: set[str] | None = None,
 ) -> bool:
     resolved = _resolve_enrichment_path(config, path)
     if resolved.exists():
         checks.append(DoctorCheck("ok", label, f"{purpose} exists: {resolved}"))
         return True
+    detail = f"{purpose} missing: {resolved}"
+    drift = _parent_directory_drift(resolved, missing_parents)
+    if drift:
+        detail = f"{detail} - {drift}"
     if required:
-        checks.append(DoctorCheck("error", label, f"{purpose} missing: {resolved}"))
+        checks.append(DoctorCheck("error", label, detail))
         return False
-    checks.append(DoctorCheck("warn", label, f"optional {purpose} missing: {resolved}"))
+    checks.append(DoctorCheck("warn", label, f"optional {detail}"))
     return True
+
+
+def _parent_directory_drift(resolved: Path, seen: set[str] | None = None) -> str | None:
+    """Explain a missing file whose parent directory itself does not exist.
+
+    Configs drift in practice when figure folders get renamed. Naming the wrong
+    directory plus the directories that do exist is far more actionable than a
+    bare "file missing", which reads like the asset was never produced.
+
+    ``seen`` de-duplicates the directory listing so a config with six broken
+    actions in the same folder does not repeat the same eight names six times.
+    """
+    parent = resolved.parent
+    if parent.is_dir():
+        return None
+    key = str(parent)
+    if seen is not None and key in seen:
+        return f"its parent directory '{parent.name}' does not exist"
+    grandparent = parent.parent
+    if not grandparent.is_dir():
+        return None
+    siblings = sorted(entry.name for entry in grandparent.iterdir() if entry.is_dir())
+    if not siblings:
+        return None
+    if seen is not None:
+        seen.add(key)
+    shown = siblings[:8]
+    suffix = "" if len(siblings) <= len(shown) else f", +{len(siblings) - len(shown)} more"
+    return (
+        f"its parent directory '{parent.name}' does not exist; "
+        f"directories available: {', '.join(shown)}{suffix}"
+    )
 
 
 def _resolve_enrichment_path(config: EnrichmentConfig, path: Path) -> Path:

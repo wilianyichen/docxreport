@@ -150,7 +150,12 @@ Step 4: 交付
 
 ## 路径规则
 
-配置里的相对路径（`template` / `output` / `image` / `source` / `file`）一律相对 **config 文件所在目录** 解析，因此配置目录可整体搬移。绝对路径原样使用。
+- **输出路径**（`output`）：相对 config 文件所在目录。
+- **输入路径**（`template` / `image` / `source` / `file`）：绝对路径原样；相对路径按顺序搜索
+  `paths_base` → config 目录 → 当前工作目录 → config 目录的祖先（最多 5 层），取第一个存在的。
+- 布局不同时在 config 里写 `paths_base: ..`（相对 config 或绝对）显式指定基准目录。
+- 历史配置（config 在 `<课程>/6/docs/`，图片写 `6/figures/x.png`）依赖祖先回退，仍然可用；
+  但新配置建议写出相对 config 目录的路径。
 
 ## 文档索引
 

@@ -24,12 +24,49 @@ except ImportError:  # pragma: no cover - optional dependency
     yaml = None
 
 
-def _resolve_relative(config_path: Path, value: str | Path) -> Path:
-    """Resolve a path from the config file relative to the config's own directory.
+def path_bases(config_path: Path | None, paths_base: str | None = None) -> list[Path]:
+    """Ordered directories used to resolve a *read-only input* path.
 
-    This makes a config directory relocatable: ``template: ../模板.docx`` and
-    ``output: out/report.docx`` mean the same thing no matter which cwd the CLI
-    runs in. Absolute paths are returned untouched.
+    Order: explicit ``paths_base`` → the config's own directory → the process cwd
+    (legacy behaviour) → the config's ancestors, nearest first (up to 5 levels).
+
+    The cwd/ancestor fallbacks exist so configs written before the path rule
+    changed keep working — a typical course layout puts the config in
+    ``<course>/6/docs/`` while figures live in ``<course>/6/figures/`` (one level)
+    or are written as ``6/figures/...`` from the course root (two levels). The
+    config directory always wins when the same file exists in both places.
+    """
+    config_dir = Path(config_path).parent.resolve() if config_path is not None else Path.cwd()
+    bases: list[Path] = []
+    if paths_base:
+        raw = Path(str(paths_base))
+        bases.append(raw.resolve() if raw.is_absolute() else (config_dir / raw).resolve())
+    candidates = [config_dir, Path.cwd().resolve(), *config_dir.parents[:5]]
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in bases:
+            bases.append(resolved)
+    return bases
+
+
+def resolve_input_path(source: Path | None, value: str | Path, *, paths_base: str | None = None) -> Path:
+    """Resolve a path that must already exist (template, image, source, file)."""
+    path = Path(str(value))
+    if path.is_absolute():
+        return path
+    bases = path_bases(source, paths_base)
+    for base in bases:
+        candidate = base / path
+        if candidate.exists():
+            return candidate
+    return bases[0] / path
+
+
+def _resolve_relative(config_path: Path, value: str | Path) -> Path:
+    """Resolve an *output* path relative to the config file's directory.
+
+    Outputs do not exist yet, so there is nothing to search: the config
+    directory is the only sensible base. This keeps a config folder relocatable.
     """
     path = Path(str(value))
     if path.is_absolute():
@@ -72,7 +109,9 @@ def load_report_config(path: Path) -> ReportConfig:
     return ReportConfig(
         name=str(raw.get("name") or path.parent.name or path.stem),
         backend=str(raw.get("backend") or "ooxml-template"),
-        template=_resolve_relative(path, raw["template"]) if raw.get("template") else None,
+        template=resolve_input_path(path, raw["template"], paths_base=raw.get("paths_base"))
+        if raw.get("template")
+        else None,
         output=_resolve_relative(path, raw["output"]),
         cover_title=str(raw.get("cover_title") or ""),
         experiment_name=str(raw.get("experiment_name") or ""),

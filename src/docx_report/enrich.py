@@ -7,7 +7,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
-from .config_loader import load_enrichment_config
+from .config_loader import load_enrichment_config, resolve_input_path
 from .errors import AnchorNotFoundError, EnrichmentActionError, ResourceMissingError
 from .models import EnrichmentConfig
 from .pydocx_backend import find_paragraph_after, insert_image_after_paragraph
@@ -186,9 +186,11 @@ def _parse_alignment(value) -> WD_ALIGN_PARAGRAPH | None:
 
 
 def _resolve_path(config: EnrichmentConfig, path: Path) -> Path:
-    if path.is_absolute() or config.source is None:
-        return path
-    return config.source.parent / path
+    """Resolve an action's input file (image / code source).
+
+    Same search order as report configs: paths_base → config dir → cwd → parent.
+    """
+    return resolve_input_path(config.source, path, paths_base=(config.extras or {}).get("paths_base"))
 
 
 def _read_head_lines(path: Path, head_lines: int) -> list[str]:

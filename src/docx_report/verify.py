@@ -11,6 +11,8 @@ from pathlib import Path
 from docx import Document
 from docx.oxml.ns import qn
 
+from .config_loader import resolve_input_path
+
 TEMPLATE_LEFTOVER_KEYWORDS = (
     "结合实验指导书",
     "不能直接复制粘贴",
@@ -178,14 +180,14 @@ def verify_document(docx_path: Path, config_path: Path | None = None) -> list[st
         lines.append("\n[config]")
         lines.append(f"  course_profile: {cfg.extras.get('_course_profile_resolved')}")
         figures = [b for b in cfg.blocks if b.kind == "figure"]
-        base = cfg.source.parent if cfg.source is not None else Path.cwd()
+        paths_base = (cfg.extras or {}).get("paths_base")
         missing = []
         for b in figures:
             raw = str(b.meta.get("image") or "")
-            cand = Path(raw)
-            if not cand.is_absolute():
-                cand = base / cand
-            if not raw or not cand.exists():
+            if not raw:
+                missing.append(raw)
+                continue
+            if not resolve_input_path(cfg.source, raw, paths_base=paths_base).exists():
                 missing.append(raw)
         lines.append(f"  figure_blocks: {len(figures)} | missing_images: {len(missing)}")
     return lines

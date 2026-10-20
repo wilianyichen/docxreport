@@ -28,7 +28,7 @@ packaging, tests, licence or CI.
   `schema/enrich.schema.json`) and a round-trip test that keeps schema and loader
   in agreement.
 - `examples/` with four runnable pipelines and `examples/run_all.py`.
-- pytest suite (73 tests, 63% line coverage baseline) with generated fixtures —
+- pytest suite (107 tests, 63% line coverage baseline) with generated fixtures —
   no committed `.docx`, fonts or screenshots.
 - CI matrix (Ubuntu + Windows × Python 3.10–3.13), packaging job, and a guard job
   that fails if a document or font binary is committed.
@@ -38,9 +38,11 @@ packaging, tests, licence or CI.
 
 ### Changed
 
-- **Paths in configs are now resolved relative to the config file's directory**
-  for `template`, `output`, `image`, `source` and `file`. Previously they were
-  resolved against the process cwd, which made config folders non-relocatable.
+- **Relative paths no longer depend on the process cwd.** Outputs resolve against
+  the config file's directory. Inputs (`template`, `image`, `source`, `file`) are
+  searched in `paths_base` → config dir → cwd → config ancestors (≤5 levels), so
+  existing `6/figures/x.png`-style configs keep working; `paths_base` pins the
+  base explicitly when needed.
 - Library moved from `lib/` to `src/` (src layout); `scripts/skill_entry.py` is now
   a thin shim over `docx_report.cli` instead of a 220-line duplicate.
 - `scripts/preview_config.py` and `scripts/inspect_docx_template.py` are
@@ -63,6 +65,16 @@ packaging, tests, licence or CI.
   `pywin32` is absent, instead of a bare `ModuleNotFoundError`.
 - Module docstrings sat after `from __future__ import annotations`, which made
   them plain string expressions (and broke import ordering).
+- `doctor` reported only the **first** missing resource in an enrich config and
+  silently skipped every later action: `ok = ok and _check_resource_exists(...)`
+  short-circuits once `ok` is `False`, and the function that appends the check is
+  never called. Each action now runs its check and combines the result after
+  (`tests/test_doctor.py::test_every_missing_action_is_reported_not_just_the_first`).
+- A missing image whose parent directory does not exist now says so and lists the
+  directories that *are* there, instead of a bare `file missing` that reads like
+  the asset was never produced. Renamed figure folders are the most common cause
+  of config drift in practice; the listing is printed once per directory rather
+  than once per broken action.
 
 ### Removed
 

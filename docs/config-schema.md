@@ -9,9 +9,23 @@ Machine-readable schemas live in [`schema/`](../schema).
 Passing one where the other is expected is a hard error
 (`E_CONFIG_WRONG_TYPE`), never a silent guess.
 
-> **Path rule.** Every relative path inside a config (`template`, `output`,
-> `image`, `source`, `file`) is resolved against **the config file's own
-> directory**. A config folder is therefore relocatable.
+> **Path rule.**
+>
+> *Input paths* (`template`, `image`, `source`, `file`) — absolute paths are used
+> as-is. A relative path is searched, in order, in: `paths_base` (if set) → the
+> config's own directory → the process cwd → the config's ancestors (up to 5
+> levels). The first existing candidate wins; the config directory is reported
+> when nothing matches.
+>
+> *Output paths* (`output`) always resolve against the config file's directory.
+>
+> The ancestor/cwd fallbacks keep legacy configs working (config in
+> `<course>/6/docs/`, figure written as `6/figures/x.png`). Set `paths_base` when
+> your layout is different from both:
+
+```yaml
+paths_base: ..            # relative to this config file, or absolute
+```
 
 ---
 

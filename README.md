@@ -138,8 +138,12 @@ instead of half-working:
 * **report config** (`report.yml`) → `build`, `revise`, `preview`
 * **enrich config** (`finalize.yml`, actions-based) → `enrich`, `validate`, `preview`
 
-Relative paths inside a config are resolved **against the config file's own
-directory**, so a config folder can be moved without rewriting paths.
+Relative paths inside a config: **outputs** resolve against the config file's own
+directory, so a config folder can be moved without rewriting anything.
+**Inputs** (`template`, `image`, `source`, `file`) additionally fall back to the
+cwd and the config's ancestors (up to 5 levels) when the file is not next to the
+config, which keeps legacy layouts working; pin the base explicitly with
+`paths_base: ..` when needed.
 
 ### Block types
 

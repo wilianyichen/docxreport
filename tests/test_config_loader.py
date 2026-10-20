@@ -182,3 +182,55 @@ blocks:
     )
     body = load_report_config(config_path).styles.body
     assert body.ascii_font == body.hansi_font == body.east_asia_font == "宋体"
+
+
+def test_input_paths_resolve_from_config_dir_first(tmp_path):
+    from docx_report.config_loader import resolve_input_path
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "fig.png").write_bytes(b"x")
+    config = tmp_path / "docs" / "report.yml"
+    config.write_text("output: o.docx\nblocks: [{kind: body, text: x}]\n", encoding="utf-8")
+
+    assert resolve_input_path(config, "fig.png") == (tmp_path / "docs" / "fig.png").resolve()
+
+
+def test_input_paths_fall_back_to_course_root(tmp_path):
+    """Legacy layout: config in <course>/6/docs, figure written as 6/figures/x.png."""
+    from docx_report.config_loader import resolve_input_path
+
+    (tmp_path / "6" / "docs").mkdir(parents=True)
+    (tmp_path / "6" / "figures").mkdir()
+    figure = tmp_path / "6" / "figures" / "a.png"
+    figure.write_bytes(b"x")
+    config = tmp_path / "6" / "docs" / "report.yml"
+    config.write_text("output: o.docx\nblocks: [{kind: body, text: x}]\n", encoding="utf-8")
+
+    assert resolve_input_path(config, "6/figures/a.png") == figure.resolve()
+
+
+def test_paths_base_overrides_the_search(tmp_path):
+    from docx_report.config_loader import resolve_input_path
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "shared").mkdir()
+    target = tmp_path / "shared" / "fig.png"
+    target.write_bytes(b"x")
+    config = tmp_path / "docs" / "report.yml"
+    config.write_text(
+        "paths_base: ../shared\noutput: o.docx\nblocks: [{kind: body, text: x}]\n",
+        encoding="utf-8",
+    )
+
+    loaded = load_report_config(config)
+    assert loaded.extras["paths_base"] == "../shared"
+    assert resolve_input_path(config, "fig.png", paths_base="../shared") == target.resolve()
+
+
+def test_output_always_resolves_from_config_dir(tmp_path):
+    config = tmp_path / "docs" / "report.yml"
+    config.parent.mkdir()
+    config.write_text("output: out/r.docx\nblocks: [{kind: body, text: x}]\n", encoding="utf-8")
+
+    loaded = load_report_config(config)
+    assert loaded.output == (tmp_path / "docs" / "out" / "r.docx").resolve()

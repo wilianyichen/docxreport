@@ -100,3 +100,51 @@ actions:
     result = doctor_config(config)
     assert result.config_type == "enrich"
     assert not result.ok
+
+
+def test_every_missing_action_is_reported_not_just_the_first(tmp_path: Path):
+    """`ok = ok and check(...)` used to short-circuit and hide every later failure."""
+    config = _write_config(
+        tmp_path,
+        """
+output: out/final.docx
+actions:
+  - action: append_image
+    image: a.png
+  - action: append_image
+    image: b.png
+  - action: append_image
+    image: c.png
+  - action: insert_image_after_anchor
+    anchor: 附图
+    image: d.png
+""",
+    )
+    result = doctor_config(config)
+    assert not result.ok
+    failed = {c.label for c in result.checks if c.status == "error"}
+    assert failed == {"action[1]", "action[2]", "action[3]", "action[4]"}
+
+
+def test_missing_parent_directory_names_the_directories_that_do_exist(tmp_path: Path):
+    """Config drift looks like "file missing"; the real cause is a renamed folder."""
+    (tmp_path / "figures" / "task_06_model_tuning").mkdir(parents=True)
+    (tmp_path / "figures" / "task_07_feature_importance").mkdir(parents=True)
+    config = _write_config(
+        tmp_path,
+        """
+output: out/final.docx
+actions:
+  - action: append_image
+    image: figures/task_06_random_forest_baseline/a.png
+  - action: append_image
+    image: figures/task_06_random_forest_baseline/b.png
+""",
+    )
+    result = doctor_config(config)
+    errors = [c for c in result.checks if c.status == "error"]
+    assert len(errors) == 2
+    assert "task_06_model_tuning" in errors[0].message
+    assert "does not exist" in errors[0].message
+    # the sibling listing is printed once, not repeated for every broken action
+    assert "task_06_model_tuning" not in errors[1].message

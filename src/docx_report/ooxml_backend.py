@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 from zipfile import ZipFile, ZipInfo
 
+from .config_loader import resolve_input_path
 from .errors import ResourceMissingError, TemplateError
 from .figure_media import MediaContext
 from .models import ParagraphStyle, ReportConfig, ReportStyleProfile
@@ -100,7 +101,7 @@ def _resolve_dotted(data, key: str):
     return cur
 
 
-def render_metrics_text(block, *, base: Path | None = None) -> str:
+def render_metrics_text(block, *, config_source: Path | None = None, paths_base: str | None = None) -> str:
     """把 results/metrics.json 里的数字渲染成一句话，避免人工搬运数值。
 
     配置示例：
@@ -115,9 +116,7 @@ def render_metrics_text(block, *, base: Path | None = None) -> str:
     fields = block.meta.get("fields") or []
     if not source:
         raise ValueError("metrics block requires a source path")
-    path = Path(str(source))
-    if not path.is_absolute():
-        path = (base or Path.cwd()) / path
+    path = resolve_input_path(config_source, source, paths_base=paths_base)
     if not path.exists():
         raise ResourceMissingError(f"metrics source not found: {path}")
     data = json.loads(path.read_text(encoding="utf-8-sig"))
@@ -284,8 +283,12 @@ def render_blocks(
             cell.append(deepcopy(images.pop(0)))
             continue
         if block.kind == "metrics":
-            base = Path(config.source).parent if config.source is not None else None
-            cell.append(make_paragraph(render_metrics_text(block, base=base), styles.body))
+            text = render_metrics_text(
+                block,
+                config_source=config.source,
+                paths_base=(config.extras or {}).get("paths_base"),
+            )
+            cell.append(make_paragraph(text, styles.body))
             continue
         if block.kind in ("figure", "figure_group"):
             if media is None:
@@ -303,10 +306,11 @@ def render_blocks(
                     raise ValueError(f"figure block requires an image path: {str(item.get('text'))[:30]}")
                 image_path = Path(str(raw))
                 if not image_path.is_absolute():
-                    # Relative figure paths are anchored to the config directory,
-                    # so a config folder stays relocatable.
-                    base = Path(config.source).parent if config.source is not None else Path.cwd()
-                    image_path = base / image_path
+                    # Relative figure paths follow the same search order as the
+                    # template (paths_base → config dir → cwd → config parent).
+                    image_path = resolve_input_path(
+                        config.source, image_path, paths_base=(config.extras or {}).get("paths_base")
+                    )
                 if not image_path.exists():
                     raise ResourceMissingError(f"figure image not found: {image_path}")
                 width = float(item.get("width_inches") or column_inches)
