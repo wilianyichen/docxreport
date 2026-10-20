@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Test / build artifacts (generated at runtime, never committed)
+tests/fixtures/generated/
+tests/tmp/
+_tmp/
+*.docx
+*.doc
+*.pdf
+!tests/fixtures/sources/*.docx
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+
+# Local overrides
+*.local.yml
