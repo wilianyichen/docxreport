@@ -54,9 +54,9 @@ dev = [
 docx-report = "docx_report.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/REPLACE-ME/docxreport"
-Issues = "https://github.com/REPLACE-ME/docxreport/issues"
-Changelog = "https://github.com/REPLACE-ME/docxreport/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/wilianyichen/docxreport"
+Issues = "https://github.com/wilianyichen/docxreport/issues"
+Changelog = "https://github.com/wilianyichen/docxreport/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

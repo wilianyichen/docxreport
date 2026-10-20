@@ -1,6 +1,6 @@
 # docxreport
 
-[![CI](https://github.com/REPLACE-ME/docxreport/actions/workflows/ci.yml/badge.svg)](https://github.com/REPLACE-ME/docxreport/actions/workflows/ci.yml)
+[![CI](https://github.com/wilianyichen/docxreport/actions/workflows/ci.yml/badge.svg)](https://github.com/wilianyichen/docxreport/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
@@ -39,7 +39,7 @@ Requires Python 3.10+. Only `python-docx`, `PyYAML` and `Pillow` are mandatory.
 From source:
 
 ```bash
-git clone https://github.com/REPLACE-ME/docxreport
+git clone https://github.com/wilianyichen/docxreport
 cd docxreport
 pip install -e ".[dev]"
 pytest

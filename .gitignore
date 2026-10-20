@@ -12,14 +12,17 @@ coverage.xml
 htmlcov/
 
 # Test / build artifacts (generated at runtime, never committed)
+# The template fixture is built on demand by tests/fixtures/build_fixture_template.py,
+# so no .docx is ever tracked.
 tests/fixtures/generated/
 tests/tmp/
 _tmp/
-examples/out/
 *.docx
 *.doc
 *.pdf
-!tests/fixtures/sources/*.docx
+
+# examples/run_all.py writes to <example>/out/ and <example>/<sub>/out/
+examples/**/out/
 
 # OS
 .DS_Store

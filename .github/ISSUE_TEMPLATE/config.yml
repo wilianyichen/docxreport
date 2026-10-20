@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/REPLACE-ME/docxreport/security/advisories/new
+    url: https://github.com/wilianyichen/docxreport/security/advisories/new
     about: Please report security issues privately, not in a public issue.
   - name: Usage question
-    url: https://github.com/REPLACE-ME/docxreport/discussions
+    url: https://github.com/wilianyichen/docxreport/discussions
     about: Ask how to model your template or config.

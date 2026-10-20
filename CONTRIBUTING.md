@@ -7,7 +7,7 @@ silently lose data**.
 ## Development setup
 
 ```bash
-git clone https://github.com/REPLACE-ME/docxreport
+git clone https://github.com/wilianyichen/docxreport
 cd docxreport
 python -m venv .venv
 # Windows: .venv\Scripts\activate

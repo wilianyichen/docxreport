@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/REPLACE-ME/docxreport/schema/report.schema.json",
+  "$id": "https://github.com/wilianyichen/docxreport/schema/report.schema.json",
   "title": "docxreport report config",
   "description": "Config consumed by `build`, `revise`, `preview`.",
   "type": "object",
