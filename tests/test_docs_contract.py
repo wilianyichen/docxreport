@@ -133,3 +133,36 @@ def test_docs_directory_has_the_promised_files():
         "compatibility.md",
     ):
         assert (ROOT / "docs" / name).exists(), name
+
+
+WORKFLOW_FILES = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+
+
+def test_workflow_files_exist():
+    names = {path.name for path in WORKFLOW_FILES}
+    assert {"ci.yml", "release.yml"} <= names
+
+
+@pytest.mark.parametrize("workflow", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_workflow_yaml_is_loadable(workflow: Path):
+    """A malformed workflow makes every run fail in 0s, before any test runs.
+
+    `name: guard: no committed docx/fonts` shipped once and did exactly that:
+    the unquoted ": " parses as a mapping, GitHub cannot load the file, and
+    ruff/pytest/local runs all stay green because nothing reads the YAML.
+    """
+    data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
+    assert isinstance(data, dict)
+    assert "jobs" in data, f"{workflow.name} has no jobs"
+    for job_name, job in data["jobs"].items():
+        assert "runs-on" in job, f"{workflow.name}: job {job_name} has no runs-on"
+        assert "steps" in job, f"{workflow.name}: job {job_name} has no steps"
+
+
+@pytest.mark.parametrize("workflow", WORKFLOW_FILES, ids=lambda p: p.name)
+def test_workflow_triggers_reference_an_existing_branch(workflow: Path):
+    """README badges and pyproject urls point at `main`; the workflow must too."""
+    data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
+    branches = ((data.get(True) or data.get("on") or {}).get("push") or {}).get("branches")
+    if branches:
+        assert "main" in branches, f"{workflow.name} pushes on {branches}, docs say main"

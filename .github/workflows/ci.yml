@@ -59,7 +59,9 @@ jobs:
           path: dist/*
 
   no-binary-assets:
-    name: guard: no committed docx/fonts
+    # quoted: an unquoted ": " in a plain scalar parses as a mapping and the
+    # whole workflow fails to load
+    name: "guard: no committed docx/fonts"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
