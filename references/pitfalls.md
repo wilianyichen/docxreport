@@ -41,7 +41,7 @@
 
 | 事故 | 现象 | 现在的拦截方式 |
 |---|---|---|
-| 环境认错 | 凭记忆假定 `D:\anaconda\envs\py39`，实际在 `C:\Users\wilia\.conda\envs\py39` | requirements 声明绝对路径；`experiment-doctor` 先探针验证解释器+版本+必需 import |
+| 环境认错 | 凭记忆假定一个 conda 环境名，实际解释器在另一个 prefix 下 | requirements 声明绝对路径；`experiment-doctor` 先探针验证解释器+版本+必需 import |
 | 静默换环境 | 指定解释器不存在时改用 base，而 base 的 sklearn/imblearn 是混装的 | `forbid_environment_fallback`；Notebook 内 `assert sys.executable` |
 | 报告虚写方法 | 报告写了 `GridSearchCV`/`StandardScaler`，Notebook 里根本没有 | requirements 的 `requires_methods` 扫描**已执行**代码单元，缺一即 INCONSISTENT |
 | py/ipynb 脱同步 | 手工在 Jupyter 改 ipynb，`.py` 真源过期 | `nbcheck --source-py` 逐代码单元比对 |

@@ -29,13 +29,22 @@ COMMAND_RE = re.compile(
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 # Personal identifiers / machine-specific roots that must never be committed.
+#
+# The Windows pattern must accept BOTH slash styles: the previous
+# `r"C:\\\\Users\\\\"` was a raw string, so the regex looked for *two*
+# consecutive backslashes and never matched the single-backslash paths that
+# actually appear in prose (`C:\Users\<name>\...`). `references/pitfalls.md`
+# shipped one such path through the guard because of it.
 FORBIDDEN_PATTERNS = [
-    r"C:/Users/[A-Za-z]",
-    r"C:\\\\Users\\\\",
-    "/mnt/disk",
+    r"[A-Za-z]:[\\/]Users[\\/][A-Za-z0-9_.-]+",  # C:\Users\alice, C:/Users/alice
+    r"/Users/[A-Za-z0-9_.-]+",  # macOS home
+    r"/home/[A-Za-z0-9_.-]+",  # Linux home
+    r"/mnt/[A-Za-z0-9_.-]+",  # mounted volumes (the old baseline used /mnt/disk2/<user>)
+    r"20\d{8}",  # student id
+    # This project's original author. Harmless to keep (the repository is
+    # theirs) and it keeps the guard honest against re-introduction.
     "wuxiaoran",
     "吴笑然",
-    r"20\d{8}",  # student id
 ]
 
 
@@ -170,3 +179,39 @@ def test_workflow_triggers_reference_an_existing_branch(workflow: Path):
     branches = ((data.get(True) or data.get("on") or {}).get("push") or {}).get("branches")
     if branches:
         assert "main" in branches, f"{workflow.name} pushes on {branches}, docs say main"
+
+
+@pytest.mark.parametrize(
+    "sample",
+    [
+        r"C:/Users/alice/.conda/envs/py39",  # single backslashes: what the old regex missed
+        "C:/Users/alice/.workbuddy/skills",
+        "/Users/alice/Desktop/report.docx",
+        "/home/alice/course",
+        "/mnt/disk2/alice/course/template.docx",
+        "2099999999-report.docx",  # matches 20\d{8}; deliberately not a real student id
+    ],
+)
+def test_guard_patterns_actually_catch_personal_paths(sample: str):
+    """Positive control: a guard that matches nothing guards nothing.
+
+    The original patterns were wrong in three ways at once -- the Windows
+    pattern only matched forward slashes, the `/mnt` pattern was hardcoded to
+    one volume name, and macOS/Linux homes were not covered. Every sample here
+    slipped past, including a real one that reached references/pitfalls.md.
+    """
+    assert any(re.search(pattern, sample) for pattern in FORBIDDEN_PATTERNS), sample
+
+
+@pytest.mark.parametrize(
+    "sample",
+    [
+        "https://github.com/wilianyichen/docxreport",
+        r"D:/Projects/docx-report",
+        "pip install docxreport",
+        "python -m docx_report doctor report.yml",
+    ],
+)
+def test_guard_patterns_do_not_flag_ordinary_text(sample: str):
+    """Negative control: the guard must not cry wolf, or it gets disabled."""
+    assert not any(re.search(pattern, sample) for pattern in FORBIDDEN_PATTERNS), sample
